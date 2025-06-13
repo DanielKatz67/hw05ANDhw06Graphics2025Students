@@ -116,6 +116,7 @@ function createCourtLines() {
 
 
 // ========= Hoops =========
+
 function createHoop(zPos) {
   const group = new THREE.Group();
   const rimHeight = 3.05;
@@ -124,49 +125,46 @@ function createHoop(zPos) {
   const boardW = 1.8;
   const boardH = 1.05;
   const boardT = 0.05;
-  const boardBottom = rimHeight + 0.15;
-  const boardCenterY = boardBottom + boardH / 2;
+  const boardCenterY = rimHeight;
+  const armLen = 0.9;
+  const poleHeight = 4;
+  const frontFace = boardT / 2;
 
-  // Backboard mesh at origin
+  // Shifted origin: (0,0,0) is now bottom of pole
+  // Backboard mesh
   const backboard = new THREE.Mesh(
     new THREE.BoxGeometry(boardW, boardH, boardT),
     new THREE.MeshPhongMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 })
   );
-  backboard.position.set(0, boardCenterY, 0);
-  backboard.receiveShadow = true;
-  backboard.castShadow = true;
+  const boardZ = armLen + boardT/2;
+  backboard.position.set(0, boardCenterY, boardZ);
+  backboard.castShadow = backboard.receiveShadow = true;
   group.add(backboard);
 
-  // Rim (torus) - proper regulation size
-  const rimR = 0.23; // FIXED: Regulation rim radius (18 inch diameter = 0.46m diameter = 0.23m radius)
+  // Rim
+  const rimR = 0.23;
   const rimTub = 0.02;
   const rim = new THREE.Mesh(
     new THREE.TorusGeometry(rimR, rimTub, 16, 64),
     new THREE.MeshPhongMaterial({ color: 0xff6600 })
   );
   rim.rotation.x = Math.PI / 2;
-  // Position rim 6 inches (0.15m) out from the front face of the backboard
-  const frontFace = boardT / 2;
-  rim.position.set(0, rimHeight, frontFace + 0.15);
+  const rimOffset = frontFace + 0.15;
+  rim.position.set(0, rimHeight, boardZ + rimOffset);
   rim.castShadow = true;
   group.add(rim);
 
-  // More visible net using thicker lines
+  // Net
   const netGroup = new THREE.Group();
   const netSegments = 10;
   const netDepth = 0.35;
-  
-  const lineMaterial = new THREE.LineBasicMaterial({ 
-    color: 0xffffff, 
-    transparent: false, // FIXED: Made net more visible
-    linewidth: 3 // FIXED: Thicker lines
-  });
+  const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 3 });
 
   for (let i = 0; i < netSegments; i++) {
     const angle = (i / netSegments) * Math.PI * 2;
     const startX = Math.cos(angle) * rimR * 0.85;
     const startZ = Math.sin(angle) * rimR * 0.85;
-    
+
     const points = [];
     for (let j = 0; j <= 6; j++) {
       const t = j / 6;
@@ -176,87 +174,39 @@ function createHoop(zPos) {
       const z = startZ * taper;
       points.push(new THREE.Vector3(x, y, z));
     }
-    
+
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
     const line = new THREE.Line(geometry, lineMaterial);
     netGroup.add(line);
   }
-  
-  netGroup.position.set(0, rimHeight, frontFace + 0.15);
+
+  netGroup.position.set(0, rimHeight, boardZ + rimOffset);
   group.add(netGroup);
 
-  // Support pole positioned BEHIND the backboard
+  // Pole
   const pole = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.08, 0.08, 4, 16),
+    new THREE.CylinderGeometry(0.08, 0.08, poleHeight, 16),
     new THREE.MeshPhongMaterial({ color: 0x666666 })
   );
-  pole.position.set(0, 2, -(boardT / 2 + 0.8));
+  pole.position.set(0, poleHeight / 2, 0); // Base is at (0,0,0)
   pole.castShadow = true;
   group.add(pole);
 
   // Support arm
   const supportArm = new THREE.Mesh(
-    new THREE.BoxGeometry(0.08, 0.08, 0.9),
+    new THREE.BoxGeometry(0.08, 0.08, armLen),
     new THREE.MeshPhongMaterial({ color: 0x666666 })
   );
-  supportArm.position.set(0, boardCenterY, -(boardT / 2 + 0.35));
+  supportArm.position.set(0, boardCenterY, armLen / 2);
   supportArm.castShadow = true;
   group.add(supportArm);
 
   // Position and orient the entire hoop group
-  group.position.set(0, 0, zPos);
-  if (zPos > 0) group.rotation.y = Math.PI;
-
-  scene.add(group);
-  return group;
+   group.position.set(0,0,zPos);
+   if (zPos > 0) group.rotation.y = Math.PI;
+   scene.add(group);
+   return group;
 }
-
-// function createHoop(zPos) {
-//   // Backboard – faces centre court
-//   const bb = new THREE.Mesh(
-//     new THREE.BoxGeometry(1.8, 1.05, 0.05),
-//     new THREE.MeshPhongMaterial({ color: 0xffffff, transparent: true, opacity: 0.6 })
-//   );
-//   bb.position.set(0, 3.575, zPos);
-//   bb.rotation.y = zPos > 0 ? Math.PI : 0; // flip 180° for far basket
-//   bb.castShadow = bb.receiveShadow = true;
-//   scene.add(bb);
-
-//   // Rim
-//   const rim = new THREE.Mesh(
-//     new THREE.TorusGeometry(0.45, 0.02, 16, 100),
-//     new THREE.MeshPhongMaterial({ color: 0xff8c00 })
-//   );
-//   rim.rotation.x = Math.PI/2;
-//   rim.position.set(0, 3.05, zPos + (zPos > 0 ? -0.2 : 0.2));
-//   rim.castShadow = true;
-//   scene.add(rim);
-
-//   // Net – 8 vertical segments
-//   const netMat = new THREE.LineBasicMaterial({ color: 0xffffff });
-//   for (let i=0;i<8;i++){
-//     const a = (i/8)*Math.PI*2;
-//     const x = Math.cos(a)*0.45;
-//     const yT= 3.05 + Math.sin(a)*0.45;
-//     const p1=new THREE.Vector3(x, yT, zPos);
-//     const p2=new THREE.Vector3(x, yT-0.6, zPos);
-//     scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([p1,p2]), netMat));
-//   }
-
-//   // Pole
-//   const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.1,3.5,16), new THREE.MeshPhongMaterial({color:0x666666}));
-//   pole.position.set( zPos>0? -1:1 ,1.75, zPos + (zPos>0? -0.8:0.8));
-//   pole.rotation.y = Math.PI/2; // tilt toward court depth
-//   pole.castShadow=true;
-//   scene.add(pole);
-
-//   // Arm connecting pole to board
-//   const arm = new THREE.Mesh(new THREE.BoxGeometry(1,0.1,0.1), new THREE.MeshPhongMaterial({color:0x666666}));
-//   arm.position.set(0,3.05, zPos + (zPos>0? -0.5:0.5));
-//   arm.castShadow=true;
-//   scene.add(arm);
-// }
-
 // ========= Basketball =========
 function createStaticBall() {
   const r = 0.24;
