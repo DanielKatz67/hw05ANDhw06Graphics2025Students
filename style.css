@@ -1,0 +1,51 @@
+canvas {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 2px solid red;
+}
+
+/* full-screen black background */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  color: #fff;
+  overflow: hidden;
+}
+
+/* Score at top-left */
+#scoreboard {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  color: white;
+  font-size: 16px;
+  font-family: Arial, sans-serif;
+  text-align: left;
+  pointer-events: none;
+}
+
+/* Controls at bottom-left */
+#controls {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  color: white;
+  font-size: 16px;
+  font-family: Arial, sans-serif;
+  text-align: left;
+  pointer-events: none;
+  /* remove default list styling if you use a ul/li */
+}
+#controls ul {
+  margin: 4px 0 0 16px;
+  padding: 0;
+  list-style: disc;
+}
+#controls li {
+  margin-bottom: 4px;
+}

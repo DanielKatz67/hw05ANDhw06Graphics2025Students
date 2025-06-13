@@ -57,21 +57,6 @@ camera.applyMatrix4(cameraTranslate);
 const controls = new OrbitControls(camera, renderer.domElement);
 let isOrbitEnabled = true;
 
-// Instructions display
-const instructionsElement = document.createElement('div');
-instructionsElement.style.position = 'absolute';
-instructionsElement.style.bottom = '20px';
-instructionsElement.style.left = '20px';
-instructionsElement.style.color = 'white';
-instructionsElement.style.fontSize = '16px';
-instructionsElement.style.fontFamily = 'Arial, sans-serif';
-instructionsElement.style.textAlign = 'left';
-instructionsElement.innerHTML = `
-  <h3>Controls:</h3>
-  <p>O - Toggle orbit camera</p>
-`;
-document.body.appendChild(instructionsElement);
-
 // Handle key events
 function handleKeyDown(e) {
   if (e.key === "o") {
@@ -142,7 +127,7 @@ function createHoop(zPos) {
   group.add(backboard);
 
   // Rim
-  const rimR = 0.23;
+  const rimR = 0.36;
   const rimTub = 0.02;
   const rim = new THREE.Mesh(
     new THREE.TorusGeometry(rimR, rimTub, 16, 64),
@@ -150,7 +135,7 @@ function createHoop(zPos) {
   );
   rim.rotation.x = Math.PI / 2;
   const boardFrontZ = boardZ + boardT / 2;
-  const rimDistance = 0.25; 
+  const rimDistance = 0.35; 
   const rimZ        = boardFrontZ + rimDistance;
   rim.position.set(0, rimHeight, rimZ);
   rim.castShadow = true;
@@ -226,11 +211,39 @@ function createStaticBall() {
 }
 
 // ========= UI =========
-function setupUI(){
-  const div=document.createElement('div');
-  div.style.position='absolute';div.style.top='20px';div.style.right='20px';div.style.color='#fff';
-  div.innerHTML='<b>Controls</b><br>O – toggle orbit';
-  document.body.appendChild(div);
+function setupUI() {
+  // Score display (top-left)
+  const scoreElement = document.createElement('div');
+  scoreElement.id = 'scoreboard';
+  scoreElement.style.position = 'absolute';
+  scoreElement.style.top = '20px';
+  scoreElement.style.left = '20px';
+  scoreElement.style.color = 'white';
+  scoreElement.style.fontSize = '16px';
+  scoreElement.style.fontFamily = 'Arial, sans-serif';
+  scoreElement.style.textAlign = 'left';
+  scoreElement.innerHTML = `<h3>Score: <span id="score-value">0</span></h3>`;
+  document.body.appendChild(scoreElement);
+
+  // Instructions display (bottom-left)
+  const instructionsElement = document.createElement('div');
+  instructionsElement.id = 'controls';
+  instructionsElement.style.position = 'absolute';
+  instructionsElement.style.bottom = '20px';
+  instructionsElement.style.left = '20px';
+  instructionsElement.style.color = 'white';
+  instructionsElement.style.fontSize = '16px';
+  instructionsElement.style.fontFamily = 'Arial, sans-serif';
+  instructionsElement.style.textAlign = 'left';
+  instructionsElement.innerHTML = `
+    <h3>Controls:</h3>
+    <p>O - Toggle orbit camera</p>
+    <p>← ↑ → ↓ – Move ball</p>
+    <p>W / S – Adjust shot power</p>
+    <p>SPACE – Shoot ball</p>
+    <p>R – Reset Ball</p>
+  `;
+  document.body.appendChild(instructionsElement);
 }
 
 // Handle resize
