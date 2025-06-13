@@ -149,8 +149,10 @@ function createHoop(zPos) {
     new THREE.MeshPhongMaterial({ color: 0xff6600 })
   );
   rim.rotation.x = Math.PI / 2;
-  const rimOffset = frontFace + 0.15;
-  rim.position.set(0, rimHeight, boardZ + rimOffset);
+  const boardFrontZ = boardZ + boardT / 2;
+  const rimDistance = 0.25; 
+  const rimZ        = boardFrontZ + rimDistance;
+  rim.position.set(0, rimHeight, rimZ);
   rim.castShadow = true;
   group.add(rim);
 
@@ -180,7 +182,7 @@ function createHoop(zPos) {
     netGroup.add(line);
   }
 
-  netGroup.position.set(0, rimHeight, boardZ + rimOffset);
+  netGroup.position.set(0, rimHeight, rimZ);
   group.add(netGroup);
 
   // Pole
