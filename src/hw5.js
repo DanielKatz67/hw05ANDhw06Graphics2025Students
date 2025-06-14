@@ -210,7 +210,7 @@ function createStaticBall() {
   });
 }
 
-// ====== Stadium Environment ======
+// ====== Bonus -Stadium Environment ======
 function createBleachers() {
   const bleacherGroup = new THREE.Group();
   const levels = 4;
@@ -286,6 +286,44 @@ function create3DBanner() {
   scene.add(board);
 }
 
+// ========= Bonus - KeyAndFreeThrow =========
+function createKeyAndFreeThrow() {
+  const mat      = new THREE.LineBasicMaterial({ color: 0xffffff });
+  const keyWidth = 4.9, keyLength = 4.1, ftRadius = keyWidth/2;
+  const segments = 32;
+
+  [ -HALF_LEN, HALF_LEN ].forEach(zBase => {
+    const dir   = Math.sign(zBase);
+    const zFree = zBase - dir*keyLength;
+
+    // 1) draw the key rectangle
+    const lanePts = [
+      new THREE.Vector3(-keyWidth/2, Y_LINE, zBase),
+      new THREE.Vector3( keyWidth/2, Y_LINE, zBase),
+      new THREE.Vector3( keyWidth/2, Y_LINE, zFree),
+      new THREE.Vector3(-keyWidth/2, Y_LINE, zFree),
+      new THREE.Vector3(-keyWidth/2, Y_LINE, zBase)
+    ];
+    scene.add(new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(lanePts),
+      mat
+    ));
+
+    // 2) draw only the free-throw semicircle (big)
+    const ftPts = [];
+    for (let i = 0; i <= segments; i++) {
+      const theta = Math.PI * (i / segments); // 0 → π
+      const x     = Math.cos(theta) * ftRadius;
+      const z     = zFree - dir * Math.sin(theta) * ftRadius;
+      ftPts.push(new THREE.Vector3(x, Y_LINE, z));
+    }
+    scene.add(new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(ftPts),
+      mat
+    ));
+  });
+}
+
 // ========= UI =========
 function setupUI() {
   // Score display (top-left)
@@ -339,6 +377,7 @@ createHoop(-HALF_LEN);
 createStaticBall();
 createBleachers();
 create3DBanner();
+createKeyAndFreeThrow();
 setupUI();
 
 ////////////
