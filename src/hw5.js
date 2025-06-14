@@ -113,16 +113,45 @@ function createHoop(zPos) {
   const boardCenterY = rimHeight;
   const armLen = 0.9;
   const poleHeight = 4;
-  const frontFace = boardT / 2;
+  const boardZ = armLen + boardT/2;
 
-  // Shifted origin: (0,0,0) is now bottom of pole
-  // Backboard mesh
+  const canvas = document.createElement('canvas');
+  canvas.width  = 512;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // red, big two-line text at the top
+  ctx.fillStyle    = '#ff0000';
+  ctx.font         = 'bold 72px Arial';
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'top';
+
+  const x = canvas.width/2;
+  const topMargin = 20;
+
+  // line 1
+  ctx.fillText('THE FINAL -', x, topMargin);
+  // line 2 (just below line 1)
+  ctx.fillText('Shay VS Daniel', x, topMargin + 72 + 10);
+  
+  const boardTexture = new THREE.CanvasTexture(canvas);
+
+  const boardMat     = new THREE.MeshPhongMaterial({
+    map:         boardTexture,
+    transparent: true,
+    opacity:     0.9
+  });
+
+    // backboard mesh
   const backboard = new THREE.Mesh(
     new THREE.BoxGeometry(boardW, boardH, boardT),
-    new THREE.MeshPhongMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 })
+    boardMat
   );
-  const boardZ = armLen + boardT/2;
-  backboard.position.set(0, boardCenterY, boardZ);
+  // position it just above the rim height
+  backboard.position.set(0, rimHeight, boardZ);
   backboard.castShadow = backboard.receiveShadow = true;
   group.add(backboard);
 
@@ -194,6 +223,7 @@ function createHoop(zPos) {
    scene.add(group);
    return group;
 }
+
 // ========= Basketball =========
 function createStaticBall() {
   const r = 0.24;
@@ -268,10 +298,10 @@ function create3DBanner() {
 
   // Centered "NBA" text in LED color
   ctx.fillStyle = '#39FF14'; // electric green
-  ctx.font = 'bold 60px Arial';
+  ctx.font = 'bold 48px Arial';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('NBA', canvas.width / 2, canvas.height / 2);
+  ctx.fillText('NBA FINAL', canvas.width / 2, canvas.height / 2);
 
   // Apply as texture
   const texture = new THREE.CanvasTexture(canvas);
