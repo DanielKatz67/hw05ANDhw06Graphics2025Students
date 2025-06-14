@@ -210,6 +210,82 @@ function createStaticBall() {
   });
 }
 
+// ====== Stadium Environment ======
+function createBleachers() {
+  const bleacherGroup = new THREE.Group();
+  const levels = 4;
+  const stepHeight = 0.4;
+  const stepDepth = 1;
+  const seatLength = COURT_LEN; // Z direction
+
+  const bleacherOffset = 0.5; // extra space after court
+
+  for (let i = 0; i < levels; i++) {
+    const height = stepHeight * i;
+    const xOffset = HALF_WID + bleacherOffset + i * stepDepth;
+
+    // Far side (positive X)
+    const bleacher = new THREE.Mesh(
+      new THREE.BoxGeometry(seatLength, stepHeight, stepDepth),
+      new THREE.MeshPhongMaterial({ color: 0xffffff })
+    );
+    bleacher.rotation.y = Math.PI / 2;
+    bleacher.position.set(xOffset, height + stepHeight / 2, 0);
+    bleacher.castShadow = bleacher.receiveShadow = true;
+    bleacherGroup.add(bleacher);
+
+    // Near side (negative X)
+    const bleacher2 = bleacher.clone();
+    bleacher2.position.x = -xOffset;
+    bleacherGroup.add(bleacher2);
+  }
+
+  scene.add(bleacherGroup);
+}
+
+function create3DBanner() {
+  const boardWidth = 6;
+  const boardHeight = 2;
+  const boardDepth = 0.3;
+
+  // Scoreboard body
+  const board = new THREE.Mesh(
+    new THREE.BoxGeometry(boardWidth, boardHeight, boardDepth),
+    new THREE.MeshPhongMaterial({ color: 0x222222 }) // dark gray
+  );
+  board.position.set(0, 8, 0);
+  board.castShadow = true;
+
+  // Create texture using canvas
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  ctx.fillStyle = '#111'; // near-black background
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Centered "NBA" text in LED color
+  ctx.fillStyle = '#39FF14'; // electric green
+  ctx.font = 'bold 60px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('NBA', canvas.width / 2, canvas.height / 2);
+
+  // Apply as texture
+  const texture = new THREE.CanvasTexture(canvas);
+  const textMat = new THREE.MeshBasicMaterial({ map: texture });
+  const screen = new THREE.Mesh(
+    new THREE.PlaneGeometry(boardWidth - 0.4, boardHeight - 0.4),
+    textMat
+  );
+  screen.position.set(0, 0, boardDepth / 2 + 0.01);
+  board.add(screen);
+
+  scene.add(board);
+}
+
 // ========= UI =========
 function setupUI() {
   // Score display (top-left)
@@ -261,6 +337,8 @@ createCourtLines();
 createHoop( HALF_LEN);
 createHoop(-HALF_LEN);
 createStaticBall();
+createBleachers();
+create3DBanner();
 setupUI();
 
 ////////////
