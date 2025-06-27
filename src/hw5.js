@@ -540,44 +540,66 @@ setupUI();
 // ======================================================================
 const clock = new THREE.Clock();
 
-function animate(){
+function animate() {
   requestAnimationFrame(animate);
   const dt = clock.getDelta();
-  
-  if(isFlying){
-    // integrate motion
+
+  if (isFlying) {
+    // 1) integrate motion
     velocity.addScaledVector(acceleration, dt);
     ball.position.addScaledVector(velocity, dt);
-
-    // rotation: axis ⟂ velocity & up
-    const axis = new THREE.Vector3().crossVectors(velocity, new THREE.Vector3(0,1,0)).normalize();
+  
+    // 2) spin the ball
+    const axis = new THREE.Vector3()
+      .crossVectors(velocity, new THREE.Vector3(0,1,0))
+      .normalize();
     const angle = velocity.length() * dt / radius;
     ball.rotateOnWorldAxis(axis, angle);
 
-    // ground collision
-    if(ball.position.y <= floorY){
+    // 3) ground collision
+    if (ball.position.y <= floorY) {
       ball.position.y = floorY;
       velocity.y *= -restitution;
-      // if very slow, stop
-      if(Math.abs(velocity.y) < 1){
+      if (Math.abs(velocity.y) < 1) {
         isFlying = false;
       }
     }
 
-    // hoop collision & score detection
-    // check passing downward through rim plane
+    // 4) backboard collision
+    //    world-space Z of the backboard plane:
+    const boardOffset = 0.9 + 0.05/2;        // armLen + board thickness/2
+    const boardZ = (targetZ > 0)
+      ?  HALF_LEN - boardOffset
+      : -HALF_LEN + boardOffset;
+    if (
+      Math.abs(ball.position.z - boardZ) < radius &&
+      ball.position.y > rimHeight - 1 &&
+      ball.position.y < rimHeight + 1
+    ) {
+      velocity.z = -velocity.z * restitution;
+    }
+
+    // 5) rim position + scoring
+    const rimOffset = 0.9 + 0.05/2 + 0.35;   // armLen + boardT/2 + rimDistance
+    const rimZ = (targetZ > 0)
+      ?  HALF_LEN - rimOffset
+      : -HALF_LEN + rimOffset;
+    const dx = ball.position.x;
+    const dz = ball.position.z - rimZ;
+    const horizDist = Math.hypot(dx, dz);
+
     if (
       velocity.y < 0 &&
       Math.abs(ball.position.y - rimHeight) < radius &&
-      new THREE.Vector2(ball.position.x, ball.position.z - targetZ).length() < rimRadius
+      horizDist < (rimRadius - radius)
     ) {
       shotsMade++;
-      score += 2;                  // 2 points per made shot
+      score += 2;
       showFeedback('SHOT MADE!');
       isFlying = false;
     }
 
-    // MISSED if it flies off court
+    // 6) miss if off-court
     if (ball.position.z < -HALF_LEN - 1 || ball.position.z > HALF_LEN + 1) {
       showFeedback('MISSED SHOT');
       isFlying = false;
@@ -586,6 +608,7 @@ function animate(){
     updateUI();
   }
 
+  // Orbit + render
   controls.enabled = isOrbitEnabled;
   controls.update();
   renderer.render(scene, camera);
