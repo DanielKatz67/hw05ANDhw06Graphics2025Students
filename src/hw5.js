@@ -107,13 +107,18 @@ function launchShot(){
             ?  HALF_LEN
             : -HALF_LEN;
 
-  const dir = new THREE.Vector3(
+  // build an un-normalized vector …
+  const raw = new THREE.Vector3(
     -ball.position.x,
     rimHeight - ball.position.y,
     targetZ - ball.position.z
-  ).normalize();
+  );
+  // … then give it an extra “up” component …
+  raw.y += 3;
+  // … before normalizing:
+  const dir = raw.normalize();
 
-  const speed = shotPower * 10;  // tweak if needed
+  const speed = shotPower * 30;  // tweak if needed
   velocity.copy(dir.multiplyScalar(speed));
   acceleration.set(0, -9.8, 0);
   isFlying = true;
@@ -519,7 +524,6 @@ createBleachers();
 create3DBanner();
 createKeyAndFreeThrow();
 setupUI();
-animate();
 ////////////
 
 // Animation function
@@ -594,5 +598,7 @@ function showFeedback(text){
   el.textContent = text;
   feedbackTimeout = setTimeout(()=> el.textContent = '', 1500);
 }
+
+animate();
 // ======================================================================
 
