@@ -1,5 +1,18 @@
 import {OrbitControls} from './OrbitControls.js'
-//import * as THREE from 'three';
+
+// ---- physics & control state ----
+let ball, radius = 0.24;
+let isFlying = false;
+let velocity = new THREE.Vector3(), acceleration = new THREE.Vector3(0, -9.8, 0);
+let shotPower = 0.5;     // 0–1
+let shotsAttempted = 0, shotsMade = 0;
+let targetZ = 0;
+let score   = 0;
+
+const restitution = 0.7;  // energy loss on bounce
+const floorY = radius + 0.1;
+const rimHeight = 3.05;
+const rimRadius = 0.36;
 
 const scene = new THREE.Scene();
 // Set background color
@@ -58,15 +71,65 @@ const controls = new OrbitControls(camera, renderer.domElement);
 let isOrbitEnabled = true;
 
 // Handle key events
+// function handleKeyDown(e) {
+//   if (e.key === "o") {
+//     isOrbitEnabled = !isOrbitEnabled;
+//   }
+// }
+// document.addEventListener('keydown', handleKeyDown);
+// ======================================================================
 function handleKeyDown(e) {
-  if (e.key === "o") {
-    isOrbitEnabled = !isOrbitEnabled;
+  switch(e.key.toLowerCase()){
+    case 'o': isOrbitEnabled = !isOrbitEnabled; break;
+    case 'arrowleft':  if(!isFlying) ball.position.x = Math.max(-HALF_WID,  ball.position.x - 0.5); break;
+    case 'arrowright': if(!isFlying) ball.position.x = Math.min( HALF_WID,  ball.position.x + 0.5); break;
+    case 'arrowup':    if(!isFlying) ball.position.z = Math.max(-HALF_LEN,  ball.position.z - 0.5); break;
+    case 'arrowdown':  if(!isFlying) ball.position.z = Math.min( HALF_LEN,  ball.position.z + 0.5); break;
+    case 'w':          shotPower = Math.min(1, shotPower + 0.05); updateUI(); break;
+    case 's':          shotPower = Math.max(0, shotPower - 0.05); updateUI(); break;
+    case ' ':          if(!isFlying){ launchShot(); } break;
+    case 'r':          resetBall(); break;
   }
 }
-
 document.addEventListener('keydown', handleKeyDown);
 
-//////////// NEW CODE :
+function updateUI(){
+  document.getElementById('power-value').textContent       = `${Math.round(shotPower*100)}%`;
+  document.getElementById('shots-attempted').textContent   = shotsAttempted;
+  document.getElementById('shots-made').textContent        = shotsMade;
+  document.getElementById('accuracy').textContent          = `${shotsAttempted ? Math.round(shotsMade/shotsAttempted*100) : 0}%`;
+  document.getElementById('score-value').textContent       = score;
+}
+
+function launchShot(){
+  // pick the nearest hoop
+  targetZ = (Math.abs(ball.position.z - HALF_LEN) < Math.abs(ball.position.z + HALF_LEN))
+            ?  HALF_LEN
+            : -HALF_LEN;
+
+  const dir = new THREE.Vector3(
+    -ball.position.x,
+    rimHeight - ball.position.y,
+    targetZ - ball.position.z
+  ).normalize();
+
+  const speed = shotPower * 10;  // tweak if needed
+  velocity.copy(dir.multiplyScalar(speed));
+  acceleration.set(0, -9.8, 0);
+  isFlying = true;
+
+  shotsAttempted++;
+  updateUI();
+}
+
+function resetBall(){
+  isFlying   = false;
+  velocity.set(0, 0, 0);
+  ball.position.set(0, floorY, 0);
+  shotPower  = 0.5;    // reset back to 50%
+  updateUI();
+}
+// ======================================================================
 
 function createCourtLines() {
   const mat = new THREE.LineBasicMaterial({ color: 0xffffff });
@@ -225,19 +288,40 @@ function createHoop(zPos) {
 }
 
 // ========= Basketball =========
-function createStaticBall() {
-  const r = 0.24;
-  const ball = new THREE.Mesh(new THREE.SphereGeometry(r,32,32), new THREE.MeshPhongMaterial({color:0xffa500}));
-  ball.position.set(0, r+0.1, 0);
-  ball.castShadow=true;
+// function createStaticBall() {
+//   const r = 0.24;
+//   const ball = new THREE.Mesh(new THREE.SphereGeometry(r,32,32), new THREE.MeshPhongMaterial({color:0xffa500}));
+//   ball.position.set(0, r+0.1, 0);
+//   ball.castShadow=true;
+//   scene.add(ball);
+//   // seams
+//   const seamMat = new THREE.MeshBasicMaterial({color:0x000000});
+//   ['x','z'].forEach(ax=>{
+//     const ring=new THREE.Mesh(new THREE.TorusGeometry(r,0.005,8,100), seamMat);
+//     ring.rotation[ax==='x'?'x':'z']=Math.PI/2;
+//     ball.add(ring);
+//   });
+// }
+function createBall() {
+  const mat = new THREE.MeshPhongMaterial({ color: 0xffa500 });
+  ball = new THREE.Mesh(new THREE.SphereGeometry(radius, 32, 32), mat);
+  ball.position.set(0, floorY, 0);
+  ball.castShadow    = true;
+  ball.receiveShadow = true;
   scene.add(ball);
-  // seams
-  const seamMat = new THREE.MeshBasicMaterial({color:0x000000});
-  ['x','z'].forEach(ax=>{
-    const ring=new THREE.Mesh(new THREE.TorusGeometry(r,0.005,8,100), seamMat);
-    ring.rotation[ax==='x'?'x':'z']=Math.PI/2;
+
+  // add black seams
+  const seamMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+  ['x','z'].forEach(ax => {
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(radius, 0.005, 8, 100),
+      seamMat
+    );
+    ring.rotation[ax==='x'?'x':'z'] = Math.PI/2;
     ball.add(ring);
   });
+
+  return ball;
 }
 
 // ====== Bonus -Stadium Environment ======
@@ -388,6 +472,31 @@ function setupUI() {
     <p>R – Reset Ball</p>
   `;
   document.body.appendChild(instructionsElement);
+
+  const statsEl = document.createElement('div');
+  statsEl.id = 'stats';
+  statsEl.style.position = 'absolute';
+  statsEl.style.top    = '80px';
+  statsEl.style.left   = '20px';
+  statsEl.style.color  = 'white';
+  statsEl.style.fontSize = '16px';
+  statsEl.innerHTML = `
+    <p>Power: <span id="power-value">50%</span></p>
+    <p>Attempts: <span id="shots-attempted">0</span></p>
+    <p>Makes: <span id="shots-made">0</span></p>
+    <p>Accuracy: <span id="accuracy">0%</span></p>
+  `;
+  document.body.appendChild(statsEl);
+
+  const feedbackEl = document.createElement('div');
+  feedbackEl.id = 'feedback';
+  feedbackEl.style.position = 'absolute';
+  feedbackEl.style.top = '140px';
+  feedbackEl.style.left = '20px';
+  feedbackEl.style.color = 'yellow';
+  feedbackEl.style.fontSize = '24px';
+  feedbackEl.style.fontWeight = 'bold';
+  document.body.appendChild(feedbackEl);
 }
 
 // Handle resize
@@ -404,23 +513,86 @@ createBasketballCourt();
 createCourtLines();
 createHoop( HALF_LEN);
 createHoop(-HALF_LEN);
-createStaticBall();
+// createStaticBall();
+createBall();
 createBleachers();
 create3DBanner();
 createKeyAndFreeThrow();
 setupUI();
-
+animate();
 ////////////
 
 // Animation function
-function animate() {
-  requestAnimationFrame(animate);
+// function animate() {
+//   requestAnimationFrame(animate);
   
-  // Update controls
+//   // Update controls
+//   controls.enabled = isOrbitEnabled;
+//   controls.update();
+  
+//   renderer.render(scene, camera);
+// }
+// animate();
+// ======================================================================
+const clock = new THREE.Clock();
+
+function animate(){
+  requestAnimationFrame(animate);
+  const dt = clock.getDelta();
+  
+  if(isFlying){
+    // integrate motion
+    velocity.addScaledVector(acceleration, dt);
+    ball.position.addScaledVector(velocity, dt);
+
+    // rotation: axis ⟂ velocity & up
+    const axis = new THREE.Vector3().crossVectors(velocity, new THREE.Vector3(0,1,0)).normalize();
+    const angle = velocity.length() * dt / radius;
+    ball.rotateOnWorldAxis(axis, angle);
+
+    // ground collision
+    if(ball.position.y <= floorY){
+      ball.position.y = floorY;
+      velocity.y *= -restitution;
+      // if very slow, stop
+      if(Math.abs(velocity.y) < 1){
+        isFlying = false;
+      }
+    }
+
+    // hoop collision & score detection
+    // check passing downward through rim plane
+    if (
+      velocity.y < 0 &&
+      Math.abs(ball.position.y - rimHeight) < radius &&
+      new THREE.Vector2(ball.position.x, ball.position.z - targetZ).length() < rimRadius
+    ) {
+      shotsMade++;
+      score += 2;                  // 2 points per made shot
+      showFeedback('SHOT MADE!');
+      isFlying = false;
+    }
+
+    // MISSED if it flies off court
+    if (ball.position.z < -HALF_LEN - 1 || ball.position.z > HALF_LEN + 1) {
+      showFeedback('MISSED SHOT');
+      isFlying = false;
+    }
+
+    updateUI();
+  }
+
   controls.enabled = isOrbitEnabled;
   controls.update();
-  
   renderer.render(scene, camera);
 }
 
-animate();
+let feedbackTimeout;
+function showFeedback(text){
+  clearTimeout(feedbackTimeout);
+  const el = document.getElementById('feedback');
+  el.textContent = text;
+  feedbackTimeout = setTimeout(()=> el.textContent = '', 1500);
+}
+// ======================================================================
+
