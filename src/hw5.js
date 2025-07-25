@@ -3,7 +3,13 @@ import {OrbitControls} from './OrbitControls.js'
 // ---- physics & control state ----
 let ball, radius = 0.24;
 let isFlying = false;
+let hasScored = false; 
 let velocity = new THREE.Vector3(), acceleration = new THREE.Vector3(0, -9.8, 0);
+
+// For decoupled spin:
+let spinAxis  = new THREE.Vector3(1,0,0);
+let spinSpeed = 0;    // radians per second
+
 let shotPower = 0.5;     // 0–1
 let shotsAttempted = 0, shotsMade = 0;
 let targetZ = 0;
@@ -12,7 +18,9 @@ let score   = 0;
 const restitution = 0.7;  // energy loss on bounce
 const floorY = radius + 0.1;
 const rimHeight = 3.05;
-const rimRadius = 0.36;
+// const rimRadius = 0.36;
+const rimRadius = 2;
+
 
 const scene = new THREE.Scene();
 // Set background color
@@ -122,7 +130,7 @@ function launchShot(){
   velocity.copy(dir.multiplyScalar(speed));
   acceleration.set(0, -9.8, 0);
   isFlying = true;
-
+  hasScored = false;
   shotsAttempted++;
   updateUI();
 }
@@ -549,12 +557,26 @@ function animate() {
     velocity.addScaledVector(acceleration, dt);
     ball.position.addScaledVector(velocity, dt);
   
-    // 2) spin the ball
-    const axis = new THREE.Vector3()
-      .crossVectors(velocity, new THREE.Vector3(0,1,0))
-      .normalize();
-    const angle = velocity.length() * dt / radius;
-    ball.rotateOnWorldAxis(axis, angle);
+    // // 2) spin the ball
+    // const axis = new THREE.Vector3()
+    //   .crossVectors(velocity, new THREE.Vector3(0,1,0))
+    //   .normalize();
+    // const angle = velocity.length() * dt / radius;
+    // ball.rotateOnWorldAxis(axis, angle);
+
+    // 2) update & apply decoupled spin
+    // — compute new spinAxis & spinSpeed whenever there's enough horizontal motion
+    const tmp = new THREE.Vector3().crossVectors(velocity, new THREE.Vector3(0,1,0));
+    const speed = velocity.length() / radius;      // rad/sec
+
+    if (tmp.lengthSq() > 1e-6) {
+      spinAxis.copy(tmp.normalize());
+      spinSpeed = speed;
+    }
+
+    // — apply the remembered spin every frame
+    const spinAngle = spinSpeed * dt;
+    ball.rotateOnWorldAxis(spinAxis, spinAngle);
 
     // 3) ground collision
     if (ball.position.y <= floorY) {
@@ -562,6 +584,7 @@ function animate() {
       velocity.y *= -restitution;
       if (Math.abs(velocity.y) < 1) {
         isFlying = false;
+        velocity.y = 0;
       }
     }
 
@@ -589,14 +612,18 @@ function animate() {
     const horizDist = Math.hypot(dx, dz);
 
     if (
+      !hasScored &&
       velocity.y < 0 &&
       Math.abs(ball.position.y - rimHeight) < radius &&
       horizDist < (rimRadius - radius)
     ) {
+      hasScored = true;
       shotsMade++;
       score += 2;
       showFeedback('SHOT MADE!');
-      isFlying = false;
+      velocity.y = -1;
+      velocity.x = 0;
+      velocity.z = 0;
     }
 
     // 6) miss if off-court
