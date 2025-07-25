@@ -15,11 +15,11 @@
 
 # Exercise 6
 ## Controls
-- O | Toggle orbit camera controls
-- ← ↑ → ↓ |	Move ball around court (X/Z axes)
-- W / S | Increase / decrease shot power (0–100%)
-- SPACE | 	Launch basketball toward hoop
-- R | 	Reset ball to center with default power
+- O          |  Toggle orbit camera controls
+- ← ↑ → ↓    |	Move ball around court (X/Z axes)
+- W / S      |  Increase / decrease shot power (0–100%)
+- SPACE      | 	Launch basketball toward hoop
+- R          | 	Reset ball to center with default power
 
 ## Physics System Implementation
 ### Gravity & Trajectory
@@ -43,22 +43,16 @@ Spin axis = cross(velocity, up), speed ∝ |velocity|/radius, applied each frame
 - On‑screen UI overlay: live score, shot power, attempts, makes, accuracy, control hints, and feedback messages
 - Fully decoupled post‑make spin so the ball continues rotating after scoring
 
-## Known Issues & Limitations
-- Ball may clip slightly on very high‑speed bounces
-- No physical rim‑ring bounce (pass‑through only)
-- Camera can sometimes clip through the court edges at extreme angles
-- Statistics UI doesn’t persist between page reloads
-
 ## Screenshots 
-![screenshot1](./screenshots/hw6/screenshot1.png)
-![screenshot2](./screenshots/hw6/screenshot2.png)
-![screenshot3](./screenshots/hw6/screenshot3.png)
-![screenshot4](./screenshots/hw6/screenshot4.png)
-![screenshot5](./screenshots/hw6/screenshot5.png)
-![screenshot6](./screenshots/hw6/screenshot6.png)
-![screenshot7](./screenshots/hw6/screenshot7.png)
-![screenshot8](./screenshots/hw6/screenshot8.png)
-![screenshot9](./screenshots/hw6/screenshot9.png)
+![screenshot1](./screenshots/hw6/Screenshot1.png)
+![screenshot2](./screenshots/hw6/Screenshot2.png)
+![screenshot3](./screenshots/hw6/Screenshot3.png)
+![screenshot4](./screenshots/hw6/Screenshot4.png)
+![screenshot5](./screenshots/hw6/Screenshot5.png)
+![screenshot6](./screenshots/hw6/Screenshot6.png)
+![screenshot7](./screenshots/hw6/Screenshot7.png)
+![screenshot8](./screenshots/hw6/Screenshot8.png)
+![screenshot9](./screenshots/hw6/Screenshot9.png)
 
 # Exercise 5
 ## Additional Implemented Features
